@@ -1,6 +1,7 @@
 import streamlit as st
 
 def authenticate(username, password):
+    # consulta users
     users = [
         {
             "username": "admin",
@@ -35,6 +36,7 @@ def not_authenticated():
         return False 
     
 def first_user():
+    #consulta select in user
     users = []
     if not user in users:
         user = st.text_input("Usuário")
