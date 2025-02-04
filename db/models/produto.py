@@ -9,7 +9,7 @@ class Produto(Base):
     nome = Column(String, nullable=False)
     preco_atual = Column(Float, nullable=False)
     estoque = Column(Integer, nullable=False)
-    preco_aquisicao = Column(Float)
+    preco_aquisicao = Column(Float, nullable=True)
     categoria = Column(String)
     
     # Relacionamento com ItemCarrinho

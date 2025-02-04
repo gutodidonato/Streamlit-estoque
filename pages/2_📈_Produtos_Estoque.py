@@ -1,65 +1,112 @@
-from tools.auth import not_authenticated
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import numpy as np
+from db import SessionLocal, get_produtos, create_produto, update_produto, delete_produto, add_item_to_carrinho, get_cliente
+from tools.auth import not_authenticated
 
 def load_product_data():
-    return pd.DataFrame({
-        'nome': ['Produto A', 'Produto B', 'Produto C', 'Produto D', 'Produto E'],
-        'categoria': ['Eletrônicos', 'Roupas', 'Alimentos', 'Eletrônicos', 'Roupas'],
-        'preco': [100, 50, 10, 200, 75],
-        'estoque': [50, 100, 200, 30, 80],
-        'avaliacao': [4.5, 3.8, 4.2, 4.7, 4.0]
-    })
+    db = SessionLocal()
+    produtos = get_produtos(db)
+    db.close()
+    return pd.DataFrame([
+        {
+            'id': p.id,
+            'nome': p.nome,
+            'preco_atual': p.preco_atual,
+            'estoque': p.estoque,
+            'preco_aquisicao': p.preco_aquisicao,
+            'categoria': p.categoria
+        } for p in produtos
+    ])
 
-def main():
-    st.set_page_config(layout="wide", page_title="Catálogo de Produtos")
+def produto_page():
+    st.title("Gerenciamento de Produtos")
     
-    st.title("Catálogo de Produtos")
+    # Carregar dados
+    df = load_product_data()
+
+    # Adicionar novo produto
+    st.header("Adicionar Novo Produto")
+    with st.form("novo_produto"):
+        nome = st.text_input("Nome do Produto")
+        preco_atual = st.number_input("Preço de Venda", min_value=0.01, step=0.01)
+        estoque = st.number_input("Estoque", min_value=0, step=1)
+        preco_aquisicao = st.number_input("Preço de Aquisição", min_value=0.0, step=0.01)
+        categoria = st.text_input("Categoria")
+
+        if st.form_submit_button("Adicionar Produto"):
+            db = SessionLocal()
+            novo_produto = create_produto(db, nome, preco_atual, estoque, preco_aquisicao, categoria)
+            if novo_produto:
+                st.success(f"Produto '{nome}' adicionado com sucesso!")
+            else:
+                st.error("Erro ao adicionar produto.")
+            db.close()
+            st.rerun()
+
+    # Listar produtos por categoria
+    st.header("Lista de Produtos por Categoria")
     
-    aba1, aba2 = st.tabs(['Catalogo', 'Dashboard'])
-    with aba1:
-
-        df = load_product_data()
-
-        # Sidebar para filtros
-        st.sidebar.header("Filtros")
-        categorias = st.sidebar.multiselect("Selecione as categorias", df['categoria'].unique())
-        preco_min, preco_max = st.sidebar.slider("Faixa de Preço", float(df['preco'].min()), float(df['preco'].max()), (0.0, float(df['preco'].max())))
-
-        # Aplicar filtros
-        if categorias:
-            df = df[df['categoria'].isin(categorias)]
-        df = df[(df['preco'] >= preco_min) & (df['preco'] <= preco_max)]
-
-        # Agrupar produtos por categoria
-        grouped = df.groupby('categoria')
-
-        # Layout principal
-        st.subheader("Lista de Produtos")
-        for categoria, grupo in grouped:
-            with st.expander(f"{categoria} ({len(grupo)} produtos)"):
-                for index, row in grupo.iterrows():
-                    col1, col2, col3 = st.columns([3, 1, 1])
-                    with col1:
-                        st.subheader(row['nome'])
-                        st.write(f"Preço: R$ {row['preco']:.2f}")
-                        st.write(f"Estoque: {row['estoque']} unidades")
-                    with col2:
-                        st.write(f"Avaliação: {row['avaliacao']:.1f}/5.0")
-                        st.progress(row['avaliacao'] / 5)
-                    with col3:
-                        if st.button(f"Adicionar ao Carrinho", key=f"add_{index}"):
-                            st.success(f"{row['nome']} adicionado ao carrinho!")
-                    st.markdown("---")
-
+    # Obter categorias únicas e converter para lista
+    categorias = df['categoria'].unique().tolist()
     
-    with aba2:
-        st.write('Dash')
-    
-    
-    
+    if not categorias:
+        st.warning("Não há produtos cadastrados.")
+    else:
+        # Criar abas para cada categoria
+        tabs = st.tabs(categorias)
+        
+        # Verificar carrinhos ativos
+        carrinhos_ativos = st.session_state.get('carrinhos_ativos', [])
+
+        for i, categoria in enumerate(categorias):
+            with tabs[i]:
+                produtos_categoria = df[df['categoria'] == categoria]
+                for _, row in produtos_categoria.iterrows():
+                    with st.expander(f"{row['nome']} - R$ {row['preco_atual']:.2f}"):
+                        col1, col2, col3 = st.columns([2, 1, 1])
+                        with col1:
+                            st.write(f"Estoque: {row['estoque']}")
+                            st.write(f"Preço de Aquisição: R$ {row['preco_aquisicao']:.2f}")
+                            if row['preco_atual'] > 0:
+                                margem_lucro = ((row['preco_atual'] - row['preco_aquisicao']) / row['preco_atual']) * 100
+                                st.write(f"Margem de Lucro: {margem_lucro:.2f}%")
+                        
+                        with col2:
+                            if row['estoque'] > 0:
+                                quantidade = st.number_input(f"Quantidade para {row['nome']}", min_value=1, max_value=row['estoque'], value=1, key=f"qty_{row['id']}")
+                            else:
+                                st.write("Produto fora de estoque")
+                                quantidade = 0
+                        
+                        with col3:
+                            if carrinhos_ativos and row['estoque'] > 0:
+                                for carrinho_id in carrinhos_ativos:
+                                    db = SessionLocal()
+                                    cliente = get_cliente(db, carrinho_id)
+                                    db.close()
+                                    if st.button(f"Adicionar ao Carrinho de {cliente.nome}", key=f"add_{row['id']}_{carrinho_id}"):
+                                        db = SessionLocal()
+                                        if add_item_to_carrinho(db, carrinho_id, row['id'], quantidade):
+                                            st.success(f"{quantidade} {row['nome']} adicionado(s) ao Carrinho de {cliente.nome}!")
+                                        else:
+                                            st.error("Erro ao adicionar ao carrinho.")
+                                        db.close()
+                            elif row['estoque'] == 0:
+                                st.warning("Produto fora de estoque")
+                            else:
+                                st.warning("Nenhum carrinho ativo. Inicie um carrinho na página de clientes.")
+                        
+                        if st.button(f"Deletar {row['nome']}", key=f"del_{row['id']}"):
+                            db = SessionLocal()
+                            if delete_produto(db, row['id']):
+                                st.success(f"Produto '{row['nome']}' deletado com sucesso!")
+                            else:
+                                st.error("Erro ao deletar produto.")
+                            db.close()
+                            st.rerun()
+
 if not_authenticated():
-    st.stop()  
-main()
-
+    st.stop()
+else:
+    produto_page()

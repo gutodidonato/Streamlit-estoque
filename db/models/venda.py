@@ -11,15 +11,26 @@ class Venda(Base):
     total = Column(Float, nullable=False)
     confirmar = Column(Boolean, default=False)
     
-    # Relacionamento com Vendedor
     vendedor_id = Column(Integer, ForeignKey('vendedor.id'), nullable=False)
     vendedor = relationship("Vendedor", back_populates="vendas_realizadas")
     
-    # Relacionamento com User
     user_id = Column(Integer, ForeignKey('user.id'), nullable=False)
     user = relationship("User", back_populates="vendas_realizadas")
     
-    # Relacionamento com Cliente (opcional)
     cliente_id = Column(Integer, ForeignKey('cliente.id'), nullable=True)
-    cliente = relationship("Cliente")
+    cliente = relationship("Cliente", back_populates="compras")
     
+    itens = relationship("ItemVenda", back_populates="venda", cascade="all, delete-orphan")
+
+    
+    
+class ItemVenda(Base):
+    __tablename__ = 'item_venda'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    venda_id = Column(Integer, ForeignKey('venda.id'))
+    produto_id = Column(Integer, ForeignKey('produto.id'))
+    quantidade = Column(Integer, nullable=False)
+    preco_unitario = Column(Float, nullable=False)
+    
+    venda = relationship("Venda", back_populates="itens")
+    produto = relationship("Produto")

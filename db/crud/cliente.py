@@ -1,13 +1,12 @@
 from sqlalchemy.exc import IntegrityError
 from ..models import Cliente
+from typing import List, Optional
 
-def create_cliente(db, nome, endereco=None, telefone=None, email=None) -> object | None:
-    '''
-        Essa função cria um cliente, e caso tenha o mesmo email, invalida
-    '''
+def create_cliente(db, nome: str, endereco: Optional[str] = None, telefone: Optional[str] = None, email: Optional[str] = None) -> Cliente:
+    existing_cliente = get_cliente_by_email(db, email)
+    if existing_cliente:
+        raise ValueError("Cliente com este email já está cadastrado")
     cliente = Cliente(nome=nome, endereco=endereco, telefone=telefone, email=email)
-    if not select_cliente(db, email=email):
-        raise ValueError("Cliente com email já cadastrado")
     try:
         db.add(cliente)
         db.commit()
@@ -15,12 +14,15 @@ def create_cliente(db, nome, endereco=None, telefone=None, email=None) -> object
         return cliente
     except IntegrityError:
         db.rollback()
-        raise ValueError("Cliente já existe")
+        raise ValueError("Erro ao criar cliente. Verifique se todos os campos estão preenchidos corretamente.")
 
-def select_cliente_id(db, id) -> Cliente | None:
-    return db.query(Cliente).filter(Cliente.id == id).first()
+def get_cliente(db, cliente_id: int) -> Optional[Cliente]:
+    return db.query(Cliente).filter(Cliente.id == cliente_id).first()
 
-def select_cliente(db, nome=None, endereco=None, telefone=None, email=None) -> Cliente | None:
+def get_cliente_by_email(db, email: str) -> Optional[Cliente]:
+    return db.query(Cliente).filter(Cliente.email == email).first()
+
+def get_cliente_by_filters(db, nome: Optional[str] = None, endereco: Optional[str] = None, telefone: Optional[str] = None, email: Optional[str] = None) -> Optional[Cliente]:
     query = db.query(Cliente)
     if nome:
         query = query.filter(Cliente.nome == nome)
@@ -32,11 +34,11 @@ def select_cliente(db, nome=None, endereco=None, telefone=None, email=None) -> C
         query = query.filter(Cliente.email == email)
     return query.first()
 
-def select_cliente_all(db) -> list[Cliente]:
+def get_all_clientes(db) -> List[Cliente]:
     return db.query(Cliente).all()
 
-def update_cliente(db, cliente_id, nome=None, endereco=None, telefone=None, email=None) -> Cliente | None:
-    cliente = select_cliente_id(db, cliente_id)
+def update_cliente(db, cliente_id: int, nome: Optional[str] = None, endereco: Optional[str] = None, telefone: Optional[str] = None, email: Optional[str] = None) -> Optional[Cliente]:
+    cliente = get_cliente(db, cliente_id)
     if cliente:
         if nome:
             cliente.nome = nome
@@ -51,8 +53,8 @@ def update_cliente(db, cliente_id, nome=None, endereco=None, telefone=None, emai
         return cliente
     return None
 
-def delete_cliente(db, cliente_id) -> bool:
-    cliente = select_cliente_id(db, cliente_id)
+def delete_cliente(db, cliente_id: int) -> bool:
+    cliente = get_cliente(db, cliente_id)
     if cliente:
         db.delete(cliente)
         db.commit()

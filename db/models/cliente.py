@@ -11,5 +11,6 @@ class Cliente(Base):
     telefone = Column(String)
     email = Column(String)
 
-    carrinhos = relationship("Carrinho")
-    vendas = relationship("Venda")
+    # Relacionamento com Venda
+    compras = relationship("Venda", back_populates="cliente")
+    carrinho = relationship("Carrinho", back_populates="cliente", uselist=False)

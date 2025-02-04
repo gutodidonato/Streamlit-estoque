@@ -6,19 +6,18 @@ from ..db import Base
 
 class ItemCarrinho(Base):
     __tablename__ = 'item_carrinho'
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     carrinho_id = Column(Integer, ForeignKey('carrinho.id'))
     produto_id = Column(Integer, ForeignKey('produto.id'))
     quantidade = Column(Integer, nullable=False)
-    preco_unitario = Column(Float, nullable=False)  
     
     carrinho = relationship("Carrinho", back_populates="itens")
     produto = relationship("Produto")
 
 class Carrinho(Base):
     __tablename__ = 'carrinho'
-    id = Column(Integer, primary_key=True)
-    cliente_id = Column(Integer, ForeignKey('cliente.id'))
-    data_criacao = Column(DateTime, default=datetime.utcnow)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    cliente_id = Column(Integer, ForeignKey('cliente.id'), unique=True)
     
-    itens = relationship("ItemCarrinho", back_populates="carrinho", cascade="all, delete-orphan")
+    cliente = relationship("Cliente", back_populates="carrinho")
+    itens = relationship("ItemCarrinho", back_populates="carrinho")
