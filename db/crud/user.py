@@ -4,7 +4,6 @@ from sqlalchemy.exc import IntegrityError
 
 from passlib.context import CryptContext
 
-# Configuração para hash de senha
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def create_user(db: Session, nome: str, senha: str, email: str):

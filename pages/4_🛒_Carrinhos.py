@@ -1,5 +1,5 @@
 import streamlit as st
-from db import SessionLocal, get_cliente, get_carrinho_by_cliente, get_itens_by_carrinho, add_item_to_carrinho, remove_item_from_carrinho, get_produtos
+from db import SessionLocal, get_cliente, get_carrinho_by_cliente, get_itens_by_carrinho, add_item_to_carrinho, remove_item_from_carrinho, get_produtos, create_venda
 from tools.auth import not_authenticated
 
 def carrinho_page():
@@ -58,6 +58,11 @@ def exibir_carrinho(db, cliente_id):
             
             if st.button("Finalizar Compra", key=f"finish_{carrinho.id}"):
                 # JAJA será corrigido
+                create_venda(
+                    db,
+                    cliente_id,
+                    carrinho.id
+                )
                 
                 
                 

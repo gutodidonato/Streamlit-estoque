@@ -33,20 +33,23 @@ def cliente_page():
         db = SessionLocal()
         clientes = get_all_clientes(db)
         
-        search = st.text_input("Buscar cliente por nome")
-        filtered_clientes = [cliente for cliente in clientes if search.lower() in cliente.nome.lower()]
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            search = st.text_input("Buscar cliente por nome ou email")
+        with col2:
+            sort_option = st.selectbox("Ordenar por:", ["Nome", "Email"])
+            reverse = st.checkbox("Ordem decrescente")
         
-        sort_option = st.selectbox("Ordenar por:", ["Nome", "Email"])
-        reverse = st.checkbox("Ordem decrescente")
+        filtered_clientes = [cliente for cliente in clientes if search.lower() in cliente.nome.lower() or (cliente.email and search.lower() in cliente.email.lower())]
         
         if sort_option == "Nome":
-            filtered_clientes.sort(key=lambda x: x.nome, reverse=reverse)
+            filtered_clientes.sort(key=lambda x: x.nome.lower(), reverse=reverse)
         else:
-            filtered_clientes.sort(key=lambda x: x.email, reverse=reverse)
+            filtered_clientes.sort(key=lambda x: (x.email or "").lower(), reverse=reverse)
         
         for cliente in filtered_clientes:
             with st.expander(f"Cliente: {cliente.nome} -  Email: {cliente.email or 'Sem email'}"):
-                col1, col2 = st.columns(2)
+                col1, col2, col3 = st.columns([2, 1, 1])
                 with col1:
                     st.write(f"**Email:** {cliente.email or 'Não informado'}")
                     st.write(f"**Endereço:** {cliente.endereco or 'Não informado'}")
@@ -62,34 +65,36 @@ def cliente_page():
                             st.session_state.carrinhos_ativos.append(cliente.id)
                         st.success(f"Carrinho iniciado para {cliente.nome}")
                         st.rerun()
-                    if st.button("Editar", key=f"edit_{cliente.id}"):
-                        st.session_state.editing_client = cliente.id
-                    if st.button("Deletar", key=f"del_{cliente.id}"):
-                        if delete_cliente(db, cliente.id):
-                            st.success("Cliente deletado com sucesso!")
-                            st.rerun()
-                        else:
-                            st.error("Erro ao deletar cliente.")
-        
-        # Formulário de edição
-        if 'editing_client' in st.session_state:
-            st.header("Editar Cliente")
-            cliente = next((c for c in clientes if c.id == st.session_state.editing_client), None)
-            if cliente:
-                with st.form("editar_cliente"):
-                    nome = st.text_input("Nome", value=cliente.nome)
-                    endereco = st.text_input("Endereço", value=cliente.endereco)
-                    telefone = st.text_input("Telefone", value=cliente.telefone)
-                    email = st.text_input("Email", value=cliente.email)
-                    if st.form_submit_button("Atualizar Cliente"):
-                        if update_cliente(db, cliente.id, nome, endereco, telefone, email):
-                            st.success("Cliente atualizado com sucesso!")
-                            del st.session_state.editing_client
-                            st.rerun()
-                        else:
-                            st.error("Erro ao atualizar cliente.")
-        
+                with col3:
+                    col3_1, col3_2 = st.columns(2)
+                    with col3_1:
+                        if st.button("Editar", key=f"edit_{cliente.id}"):
+                            st.session_state.editing_client = cliente.id
+                    with col3_2:
+                        if st.button("Deletar", key=f"del_{cliente.id}"):
+                            if delete_cliente(db, cliente.id):
+                                st.success("Cliente deletado com sucesso!")
+                                st.rerun()
+                            else:
+                                st.error("Erro ao deletar cliente.")
+                
+                if st.session_state.get('editing_client') == cliente.id:
+                    st.subheader(f"Editar Cliente: {cliente.nome}")
+                    with st.form(key=f"edit_form_{cliente.id}"):
+                        nome = st.text_input("Nome", value=cliente.nome)
+                        email = st.text_input("Email", value=cliente.email)
+                        endereco = st.text_input("Endereço", value=cliente.endereco)
+                        telefone = st.text_input("Telefone", value=cliente.telefone)
+                        if st.form_submit_button("Atualizar Cliente"):
+                            if update_cliente(db, cliente.id, nome, endereco, telefone, email):
+                                st.success("Cliente atualizado com sucesso!")
+                                del st.session_state.editing_client
+                                st.rerun()
+                            else:
+                                st.error("Erro ao atualizar cliente.")
+
         db.close()
+    
 
 if not_authenticated():
     st.stop()
