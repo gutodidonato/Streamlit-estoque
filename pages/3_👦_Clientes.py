@@ -33,11 +33,9 @@ def cliente_page():
         db = SessionLocal()
         clientes = get_all_clientes(db)
         
-        # Adicionar campo de busca
         search = st.text_input("Buscar cliente por nome")
         filtered_clientes = [cliente for cliente in clientes if search.lower() in cliente.nome.lower()]
         
-        # Adicionar opções de ordenação
         sort_option = st.selectbox("Ordenar por:", ["Nome", "Email"])
         reverse = st.checkbox("Ordem decrescente")
         
@@ -92,9 +90,6 @@ def cliente_page():
                             st.error("Erro ao atualizar cliente.")
         
         db.close()
-if st.sidebar.button("Ir para Carrinhos"):
-        st.session_state.page = "carrinhos"
-        st.rerun()
 
 if not_authenticated():
     st.stop()
