@@ -1,18 +1,5 @@
 import streamlit as st
-from db import get_user_auth, create_user, get_users, get_db, SessionLocal
-
-def authenticate(username, password):
-    users = [
-        {
-            "username": "admin",
-            "password": "admin"
-        }
-    ]
-    
-    for user in users:
-        if user["username"] == username and user["password"] == password:
-            return True
-    return False
+from db import get_user_auth, create_user, get_users, get_db, SessionLocal, get_user_by_username
 
 def registrar():
     if 'registro' not in st.session_state:
@@ -30,12 +17,24 @@ def registrar():
                 create_user(username=new_username, password=new_password, email=email)
                 st.session_state['authenticated'] = True
                 st.session_state['username'] = new_username
+                st.session_state['username_id'] = get_user_by_username(username=new_username)
                 st.rerun()
             except:
                 st.error("Erro ao criar usuário")
-
+def login(username, password):
+    if st.button("Login"):
+        try:
+            if get_user_auth(username=username, password=password):
+                st.session_state['authenticated'] = True
+                st.session_state['username'] = username
+                st.session_state['username_id'] = get_user_by_username(username=username)
+                st.success("Login realizado com sucesso!")
+                st.rerun()
+        except Exception as e:
+                print(e)                
+                st.error("Usuário ou senha incorretos.")
+                
 def not_authenticated():
-    
     if 'authenticated' not in st.session_state:
         st.session_state['authenticated'] = False
 
@@ -45,17 +44,7 @@ def not_authenticated():
         username = st.text_input("Usuário")
         password = st.text_input("Senha", type="password")
 
-        if st.button("Login"):
-            try:
-                if get_user_auth(username=username, password=password):
-                    st.session_state['authenticated'] = True
-                    st.session_state['username'] = username
-                    st.success("Login realizado com sucesso!")
-                    st.rerun()
-            except Exception as e:
-                print(e)                
-                st.error("Usuário ou senha incorretos.")
-
+        login(username, password)
         registrar()
                 
         return True

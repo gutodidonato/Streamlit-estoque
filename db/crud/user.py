@@ -40,10 +40,10 @@ def get_user(user_id: int) -> object:
     finally:
         db.close()
 
-def get_user_by_email(email: str) -> object:
+def get_user_by_username(username: str) -> object:
     db = get_db_auth()
     try:
-        return db.query(User).filter(User.email == email).first()
+        return db.query(User).filter(User.username == username).first()
     finally:
         db.close()
 

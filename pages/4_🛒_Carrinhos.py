@@ -61,7 +61,7 @@ def exibir_carrinho(db, cliente_id):
             
             if st.button("Finalizar Compra", key=f"finish_{carrinho.id}"):
                 vendedor_id = get_vendedor_by_nome(vendedor)
-                user_id = 
+                user_id = st.session_state['username_id']
                 # JAJA será corrigido
                 create_venda(
                     db,
