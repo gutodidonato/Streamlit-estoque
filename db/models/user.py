@@ -6,8 +6,8 @@ from ..db import Base
 class User(Base):
     __tablename__ = 'user'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    nome = Column(String)
-    senha = Column(String)
+    username = Column(String)
+    password = Column(String)
     email = Column(String)
     
     # Relacionamento com Vendas

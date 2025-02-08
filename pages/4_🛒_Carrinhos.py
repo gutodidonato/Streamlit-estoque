@@ -1,5 +1,5 @@
 import streamlit as st
-from db import SessionLocal, get_cliente, get_carrinho_by_cliente, get_itens_by_carrinho, add_item_to_carrinho, remove_item_from_carrinho, get_produtos, create_venda
+from db import SessionLocal, get_cliente, get_carrinho_by_cliente, get_itens_by_carrinho, add_item_to_carrinho, remove_item_from_carrinho, get_produtos, create_venda, get_vendedor_by_nome
 from tools.auth import not_authenticated
 
 def carrinho_page():
@@ -31,12 +31,15 @@ def exibir_carrinho(db, cliente_id):
     carrinho = get_carrinho_by_cliente(db, cliente_id)
     
     st.header(f"Carrinho de {cliente.nome}")
+    entrega = st.number_input(min_value=0, step=0.1)
+    vendedor = st.text_input(label='Nome do vendedor')
     
     if carrinho:
         itens = get_itens_by_carrinho(db, carrinho.id)
         if itens:
             total = 0
             for item in itens:
+                print(item)
                 col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
                 with col1:
                     st.write(f"{item.produto.nome}")
@@ -57,9 +60,12 @@ def exibir_carrinho(db, cliente_id):
             st.write(f"**Total: R$ {total:.2f}**")
             
             if st.button("Finalizar Compra", key=f"finish_{carrinho.id}"):
+                vendedor_id = get_vendedor_by_nome(vendedor)
+                user_id = 
                 # JAJA será corrigido
                 create_venda(
                     db,
+                    vendedor_id,
                     cliente_id,
                     carrinho.id
                 )

@@ -10,7 +10,7 @@ def create_venda(db: Session, vendedor_id: int, user_id: int, cliente_id: Option
         user_id=user_id,
         cliente_id=cliente_id,
         frete=frete,
-        total=frete  # Inicialmente, o total é apenas o frete
+        total=frete  
     )
     try:
         db.add(nova_venda)
