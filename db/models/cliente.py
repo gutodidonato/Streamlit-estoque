@@ -6,7 +6,7 @@ from ..db import Base
 class Cliente(Base):
     __tablename__ = 'cliente'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    username = Column(String)
+    nome = Column(String)
     endereco = Column(String)
     telefone = Column(String)
     email = Column(String)

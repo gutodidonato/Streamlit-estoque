@@ -31,15 +31,22 @@ def exibir_carrinho(db, cliente_id):
     carrinho = get_carrinho_by_cliente(db, cliente_id)
     
     st.header(f"Carrinho de {cliente.nome}")
-    entrega = st.number_input(min_value=0, step=0.1)
-    vendedor = st.text_input(label='Nome do vendedor')
+    
+    check_taxa = st.checkbox(label='Terá custo de entrega? ', key=f'carrinho_{cliente_id}')
+    check_vendedor = st.checkbox(label='Foi atendido? ', key=cliente_id)
+    if check_taxa:
+        entrega = st.number_input(label='Custo de Entrega', min_value=0.0, step=0.1, key=cliente_id)
+    if check_vendedor:
+        vendedor = st.text_input(label='Nome do vendedor', key=cliente_id)
+    st.write("______________________________")
+    st.
+    
     
     if carrinho:
         itens = get_itens_by_carrinho(db, carrinho.id)
         if itens:
             total = 0
             for item in itens:
-                print(item)
                 col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
                 with col1:
                     st.write(f"{item.produto.nome}")
