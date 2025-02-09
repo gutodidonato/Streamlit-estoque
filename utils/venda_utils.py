@@ -1,13 +1,11 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from db import SessionLocal, get_produtos, create_produto, update_produto, delete_produto, add_item_to_carrinho, get_cliente
+from db import SessionLocal, get_produtos, create_produto, update_produto, delete_produto, add_item_to_carrinho, get_cliente, update_item_carrinho
 from tools.auth import not_authenticated
 
 def load_product_data():
-    db = SessionLocal()
-    produtos = get_produtos(db)
-    db.close()
+    produtos = get_produtos()
     return pd.DataFrame([
         {
             'id': p.id,
@@ -48,17 +46,15 @@ def listagem_produtos(df):
                         with col3:
                             if carrinhos_ativos and row['estoque'] > 0:
                                 for carrinho_id in carrinhos_ativos:
-                                    #preveja mudança
-                                    db = SessionLocal()
-                                    cliente = get_cliente(db, carrinho_id)
+                                    cliente = get_cliente(carrinho_id)
                                     db.close()
                                     if st.button(f"Adicionar ao Carrinho de {cliente.nome}", key=f"add_{row['id']}_{carrinho_id}"):
                                         db = SessionLocal()
-                                        if add_item_to_carrinho(db, carrinho_id, row['id'], quantidade):
+                                        if add_item_to_carrinho(carrinho_id, row['id'], quantidade):
                                             st.success(f"{quantidade} {row['nome']} adicionado(s) ao Carrinho de {cliente.nome}!")
                                         else:
                                             st.error("Erro ao adicionar ao carrinho.")
-                                            db.close()
+                                            
                             elif row['estoque'] == 0:
                                 st.warning("Produto fora de estoque")
                             else:
@@ -66,12 +62,11 @@ def listagem_produtos(df):
             
                             if st.button(f"Deletar {row['nome']}", key=f"del_{row['id']}"):
                                 db = SessionLocal()
-                                if delete_produto(db, row['id']):
+                                if delete_produto(row['id']):
                                     st.success(f"Produto '{row['nome']}' deletado com sucesso!")
                                     st.rerun()
                                 else:
                                     st.error("Erro ao deletar produto.")
-                                    db.close()
                                 
                             if st.button(f"Atualizar {row['nome']}", key=f"upd_{row['id']}"):
                                 st.session_state.editing_product = row['id']
@@ -86,13 +81,12 @@ def listagem_produtos(df):
                                     categoria = st.text_input("Categoria", value=row['categoria'])
                                     if st.form_submit_button("Atualizar produto"):
                                         db = SessionLocal()
-                                        if update_produto(db, row['id'], nome, preco_atual, estoque, preco_aquisicao, categoria):
+                                        if update_produto(row['id'], nome, preco_atual, estoque, preco_aquisicao, categoria):
                                             st.success("Produto atualizado com sucesso!")
                                             del st.session_state.editing_product
                                             st.rerun()
                                         else:
                                             st.error("Erro ao atualizar produto.")
-                                            db.close()
     except:
         st.error('Não há produtos disponíveis')
 

@@ -1,6 +1,6 @@
 import streamlit as st
 from db import get_user_auth, create_user, get_users, get_db, SessionLocal, get_user_by_username
-
+import time
 def registrar():
     if 'registro' not in st.session_state:
         st.session_state.registro = False
@@ -18,9 +18,12 @@ def registrar():
                 st.session_state['authenticated'] = True
                 st.session_state['username'] = new_username
                 st.session_state['username_id'] = get_user_by_username(username=new_username)
+                st.write('Conta criada com sucesso')
+                time.sleep(3)
                 st.rerun()
             except:
                 st.error("Erro ao criar usuário")
+                
 def login(username, password):
     if st.button("Login"):
         try:
@@ -29,6 +32,7 @@ def login(username, password):
                 st.session_state['username'] = username
                 st.session_state['username_id'] = get_user_by_username(username=username)
                 st.success("Login realizado com sucesso!")
+                time.sleep(3)
                 st.rerun()
         except Exception as e:
                 print(e)                

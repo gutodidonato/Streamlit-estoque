@@ -1,7 +1,4 @@
 import streamlit as st
-import pandas as pd
-import numpy as np
-from db import SessionLocal, get_produtos, create_produto, update_produto, delete_produto, add_item_to_carrinho, get_cliente
 from tools.auth import not_authenticated
 from utils import load_product_data, pesquisa_produtos, listagem_produtos, adiciona_produtos
 

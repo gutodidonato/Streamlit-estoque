@@ -11,6 +11,9 @@ class ItemCarrinho(Base):
     produto_id = Column(Integer, ForeignKey('produto.id'))
     quantidade = Column(Integer, nullable=False)
     
+    #vamos contemplar o valor histórico aqui:
+    preco_unitario = Column(Float, nullable=False)
+    
     carrinho = relationship("Carrinho", back_populates="itens")
     produto = relationship("Produto")
 
