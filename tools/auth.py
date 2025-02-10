@@ -21,8 +21,9 @@ def registrar():
                 st.write('Conta criada com sucesso')
                 time.sleep(3)
                 st.rerun()
-            except:
-                st.error("Erro ao criar usuário")
+            except Exception as e:
+                print("Log:", e)
+                #st.error("Erro ao criar usuário")
                 
 def login(username, password):
     if st.button("Login"):
@@ -34,6 +35,8 @@ def login(username, password):
                 st.success("Login realizado com sucesso!")
                 time.sleep(3)
                 st.rerun()
+            else:
+                st.error("Credenciais inválidas")
         except Exception as e:
                 print(e)                
                 st.error("Usuário ou senha incorretos.")

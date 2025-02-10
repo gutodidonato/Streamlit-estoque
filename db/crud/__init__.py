@@ -1,5 +1,5 @@
 from .cliente import create_cliente, delete_cliente, get_all_clientes, get_cliente, get_cliente_by_email, get_cliente_by_filters, update_cliente
-from .material import create_material, delete_material, get_materiais, get_material, get_material_by_nome, update_material
+from .material import adicionar_materiais, create_material, delete_material, get_materiais, get_materiais_abaixo_minimo, get_materiais_do_produto_abaixo_estoque, get_material, get_materiais_do_produto, get_material_by_nome, get_produtos_com_material, get_produto, remover_materiais, update_material
 from .produtos import create_produto, delete_produto, get_produto, get_produto_by_nome, get_produtos, update_produto
 from .user import create_user, delete_user, get_user, get_user_by_username, get_users, update_user, get_user_auth
 from .carrinho import create_carrinho, delete_carrinho, add_item_to_carrinho, clear_carrinho, create_item_carrinho, delete_item_carrinho, get_carrinho, get_carrinho_by_cliente, get_carrinho_total, get_item_carrinho, get_all_carrinhos, get_itens_by_carrinho, remove_item_from_carrinho, update_item_carrinho

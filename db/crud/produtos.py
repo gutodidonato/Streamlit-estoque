@@ -4,10 +4,27 @@ from ..models import Produto
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-def create_produto(nome: str, preco_atual: float, estoque: int, preco_aquisicao: Optional[float] = None, categoria: Optional[str] = None) -> Produto:
+def create_produto(nome: str,
+                   preco_atual: float,
+                   estoque: int,
+                   estoque_minimo: Optional[int] = None,
+                   estoque_alerta: Optional[int] = None,
+                   estoque_maximo: Optional[int] = None,
+                   preco_aquisicao: Optional[float] = None,
+                   categoria: Optional[str] = None,
+                   local: Optional[str] = None
+                   ) -> Produto:
     db = get_db_auth()
     try:
-        db_produto = Produto(nome=nome, preco_atual=preco_atual, estoque=estoque, preco_aquisicao=preco_aquisicao, categoria=categoria)
+        db_produto = Produto(nome=nome,
+                             preco_atual=preco_atual,
+                             estoque=estoque,
+                             estoque_minimo=estoque_minimo,
+                             estoque_alerta=estoque_alerta,
+                             estoque_maximo=estoque_maximo,
+                             preco_aquisicao=preco_aquisicao,
+                             categoria=categoria,
+                             local=local)
         db.add(db_produto)
         db.commit()
         db.refresh(db_produto)
@@ -41,10 +58,25 @@ def get_produtos(skip: int = 0, limit: int = 100) -> List[Produto]:
         return db.query(Produto).offset(skip).limit(limit).all()
     finally:
         db.close()
+        
+def get_produtos_abaixo_minimo() -> List[Produto]:
+    db = get_db_auth()
+    try:
+        return db.query(Produto).filter(Produto.estoque < Produto.estoque_minimo).all()
+    finally:
+        db.close()
 
-def update_produto(produto_id: int, nome: Optional[str] = None, preco_atual: Optional[float] = None, 
-                   estoque: Optional[int] = None, preco_aquisicao: Optional[float] = None, 
-                   categoria: Optional[str] = None) -> Optional[Produto]:
+def update_produto(produto_id: int,
+                   nome: Optional[str] = None,
+                   preco_atual: Optional[float] = None, 
+                   estoque: Optional[int] = None,
+                   estoque_minimo: Optional[int] = None,
+                   estoque_alerta: Optional[int] = None,
+                   estoque_maximo: Optional[int] = None,
+                   preco_aquisicao: Optional[float] = None, 
+                   categoria: Optional[str] = None,
+                   local: Optional[str] = None
+                   ) -> Optional[Produto]:
     db = get_db_auth()
     try:
         db_produto = db.query(Produto).filter(Produto.id == produto_id).first()
@@ -59,6 +91,14 @@ def update_produto(produto_id: int, nome: Optional[str] = None, preco_atual: Opt
                 db_produto.preco_aquisicao = preco_aquisicao
             if categoria:
                 db_produto.categoria = categoria
+            if estoque_minimo is not None:
+                db_produto.estoque_minimo = estoque_minimo
+            if estoque_alerta is not None:
+                db_produto.estoque_alerta = estoque_alerta
+            if estoque_maximo is not None:
+                db_produto.estoque_maximo = estoque_maximo
+            if local is not None:
+                db_produto.local = local
             db.commit()
             db.refresh(db_produto)
         return db_produto

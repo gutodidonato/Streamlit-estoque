@@ -22,7 +22,7 @@ def main():
     )
     estoques = st.Page(
         page='pages/6_🧳_Materiais_Estoque.py',
-        title='Estoque'
+        title='Materiais'
     )
     configuracoes = st.Page(
         page='pages/10_⚙️_Configurações.py',
@@ -31,7 +31,7 @@ def main():
     pg = st.navigation(
         {
             "Vendas": [produtos, clientes, carrinhos, vendas],
-            "Estoque": [estoques],
+            "Materiais": [estoques],
             "Configurações": [configuracoes],
         }
     )

@@ -9,8 +9,14 @@ class Produto(Base):
     nome = Column(String, nullable=False)
     preco_atual = Column(Float, nullable=False)
     estoque = Column(Integer, nullable=False)
+    estoque_minimo = Column(Integer, nullable=True)
+    estoque_alerta = Column(Integer, nullable=True)
+    estoque_maximo = Column(Integer, nullable=True)
     preco_aquisicao = Column(Float, nullable=True)
     categoria = Column(String)
+    local = Column(String, nullable=True)
+    
+    materiais = relationship("MaterialProduto", back_populates="produto")
     
     # Relacionamento com ItemCarrinho
     vendas = relationship("ItemCarrinho", back_populates="produto")

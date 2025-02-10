@@ -4,5 +4,5 @@ from .venda import Venda, ItemVenda
 from .produto import Produto
 from .cliente import Cliente
 from .user import User
-from .material import Material
+from .material import Material, MaterialProduto
 from .carrinho import ItemCarrinho, Carrinho
