@@ -70,6 +70,20 @@ def update_user(user_id: int, username: str = None, password: str = None, email:
         return db_user
     finally:
         db.close()
+        
+def update_user_pass(user_id:int, new_password: str):
+    db = get_db_auth()
+    try:
+        db_user = get_user(user_id=user_id)
+        if db_user:
+            db_user.password = pwd_context.hash(new_password)
+            db.commit()
+            db.refresh(db_user)
+            return db_user
+    except Exception as e:
+        print(f"Error updating user password: {e}")
+    finally:
+        db.close()
 
 def delete_user(user_id: int) -> bool:
     db = get_db_auth()

@@ -5,18 +5,27 @@ from db import SessionLocal, get_produtos, create_produto, update_produto, delet
 from tools.auth import not_authenticated
 import time
 
-produto_counter = 0
 
-def progress_bar(estoque, estoque_alerta):
-    if estoque_alerta == 0:
-        return 100 
-    progress = min(100, (estoque / estoque_alerta) * 100)
-    return progress
+def progress_bar(estoque: int, estoque_maximo: int, estoque_alerta: int):
+    if estoque_maximo == 0 or estoque_alerta == 0:
+        st.error("Erro: Estoque máximo ou estoque de alerta não podem ser zero.")
+        return
+    
+    if estoque > estoque_maximo:
+        progress = min(100, int((estoque / estoque_maximo) * 100))
+        st.progress(progress)
+        st.warning("Estamos acima do Estoque Máximo!")
+    elif estoque > estoque_alerta:
+        progress = min(100, int((estoque / estoque_maximo) * 100))
+        st.progress(progress)
+        st.success("Estoque em níveis adequados.")
+    else:
+        progress = min(100, int((estoque / estoque_alerta) * 100))
+        st.progress(progress)
+        st.error("Estoque crítico! Necessário reabastecer imediatamente.")
+    
 
 def load_product_data():
-    global produto_counter
-    produto_counter += 1
-    
     produtos = get_produtos()
     return pd.DataFrame([
         {
@@ -33,11 +42,7 @@ def load_product_data():
         } for p in produtos
     ])
     
-def produto(row, index, informacoes: bool = False):
-    global produto_counter
-    produto_counter += 1
-    
-
+def produto(row, informacoes: bool = False, variavel_alerta : int = 0):
     with st.expander(f"{row['nome']} - R$ {row['preco_atual']:.2f}"):
         col1, col2 = st.columns([3, 1])
         with col1:
@@ -55,28 +60,14 @@ def produto(row, index, informacoes: bool = False):
                 
             st.write(f"Local: {row['local']}")
 
-            progress = progress_bar(row['estoque'], row['estoque_alerta'])
-            st.write("Status do Estoque:")
-            col_bar, col_text = st.columns([3, 1])
-            with col_bar:
-                st.progress(progress / 100)
-            with col_text:
-                st.write(f"{progress:.1f}%")
-            
-            if progress < 20:
-                st.error("Estoque crítico! Necessário reabastecer imediatamente.")
-            elif progress < 50:
-                st.warning("Estoque baixo! Considere reabastecer em breve.")
-            else:
-                st.success("Estoque em níveis adequados.")
-                    
+            progress = progress_bar(estoque=row['estoque'], estoque_alerta=row['estoque_alerta'], estoque_maximo=row['estoque_maximo'])
         with col2:
             if row['estoque'] > 0:
-                quantidade = st.number_input(f"Quantidade", min_value=1, max_value=row['estoque'], value=1, key=f"qty_{row['id']}_{produto_counter}")
+                quantidade = st.number_input(f"Quantidade", min_value=1, max_value=row['estoque'], value=1, key=f"qty_{row['id']}_{variavel_alerta}")
                 carrinhos_ativos = st.session_state.get('carrinhos_ativos', [])
                 if carrinhos_ativos:
-                    carrinho_id = st.selectbox("Selecione o carrinho", options=carrinhos_ativos, format_func=lambda x: get_cliente(x).nome, key=f"carrinho_{row['id']}_{produto_counter}")
-                    if st.button("Adicionar ao Carrinho", key=f"add_{row['id']}_{produto_counter}"):
+                    carrinho_id = st.selectbox("Selecione o carrinho", options=carrinhos_ativos, format_func=lambda x: get_cliente(x).nome, key=f"carrinho_{row['id']}_{variavel_alerta}")
+                    if st.button("Adicionar ao Carrinho", key=f"add_{row['id']}_{variavel_alerta}"):
                         if add_item_to_carrinho(carrinho_id, row['id'], quantidade):
                             st.success(f"{quantidade} {row['nome']} adicionado(s) ao carrinho!")
                         else:
@@ -86,13 +77,6 @@ def produto(row, index, informacoes: bool = False):
             else:
                 st.warning("Produto fora de estoque")
                     
-            if st.button("Deletar", key=f"del_{row['id']}_{produto_counter}"):
-                if st.button("Confirmar exclusão?", key=f"confirm_del_{row['id']}_{produto_counter}"):
-                    if delete_produto(row['id']):
-                        st.success(f"Produto '{row['nome']}' deletado com sucesso!")
-                        st.rerun()
-                    else:
-                        st.error("Erro ao deletar produto.")
             
 
                         
@@ -106,7 +90,7 @@ def listagem_produtos(df):
             with tabs[i]:
                 produtos_categoria = df[df['categoria'] == categoria]
                 for index, row in produtos_categoria.iterrows():
-                    produto(row, index)
+                    produto(row, informacoes=False, variavel_alerta=1)
     except Exception as e:
         st.error(f'Erro ao listar produtos: {str(e)}')
 
@@ -123,22 +107,8 @@ def pesquisa_produtos(df):
         else:
             st.success(f"{len(produtos_filtrados)} produto(s) encontrado(s).")
             for index, row in produtos_filtrados.iterrows():
-                produto(row, index)
+                produto(row, False, 2)
 
-def pesquisa_produtos(df):
-    st.header("Pesquisar Produtos")
-    search_term = st.text_input("Digite o nome do produto, categoria ou qualquer outra informação")
-    if search_term:
-        produtos_filtrados = df[
-            df.astype(str).apply(lambda x: x.str.contains(search_term, case=False)).any(axis=1)
-        ]
-                    
-        if produtos_filtrados.empty:
-            st.warning("Nenhum produto encontrado com esse termo de pesquisa.")
-        else:
-            st.success(f"{len(produtos_filtrados)} produto(s) encontrado(s).")
-            for _, row in produtos_filtrados.iterrows():
-                produto(row)
 
 def adiciona_produtos():
     with st.form("novo_produto"):
@@ -164,6 +134,7 @@ def adiciona_produtos():
                 
 def listagem_produtos_detalhada(df):
     try:
+        st.write("Esta é uma listagem sem resumo ")
         categorias = df['categoria'].unique().tolist()
         tabs = st.tabs(categorias)
         carrinhos_ativos = st.session_state.get('carrinhos_ativos', [])
@@ -172,16 +143,16 @@ def listagem_produtos_detalhada(df):
             with tabs[i]:
                 produtos_categoria = df[df['categoria'] == categoria]
                 for index, row in produtos_categoria.iterrows():
-                    produto(row, index, True)
+                    produto(row, True, 4)
     except Exception as e:
         st.error(f'Erro ao listar produtos: {str(e)}')
         
         
-def pesquisa_e_edicao_produtos(df):
-    st.header("Edição de Produtos")
+def pesquisa_e_edicao_produtos(df, variavel_alerta : int = 9):
+    st.header("Edição de Produtos", divider='red')
 
     # Campo de pesquisa
-    search_term = st.text_input("Digite o nome do produto, categoria ou qualquer outra informação")
+    search_term = st.text_input("Digite o nome do produto, categoria ou qualquer outra informação", key=f"{variavel_alerta}_123")
 
     if search_term:
         produtos_filtrados = df[
@@ -198,48 +169,55 @@ def pesquisa_e_edicao_produtos(df):
                     
                     with col1:
                         st.write(f"Categoria: {row['categoria']}")
-                        st.write(f"Estoque: {row['estoque']}")
                         st.write(f"Local: {row['local']}")
+                        st.write(f"Categoria: {row['categoria']}")
+                        st.write(f"Estoque: {row['estoque']}")
+                        st.write(f"Estoque Mínimo: {row['estoque_minimo']}")
+                        st.write(f"Estoque Alerta: {row['estoque_alerta']}")
+                        st.write(f"Estoque Máximo: {row['estoque_maximo']}")
+                        st.write(f"Preço de Aquisição: R$ {row['preco_aquisicao']:.2f}")
                         
-                        # Barra de progresso para o estoque
-                        progress = min(100, (row['estoque'] / row['estoque_maximo']) * 100) if row['estoque_maximo'] > 0 else 0
-                        st.progress(progress)
-                        if progress < 20:
-                            st.error("Estoque crítico!")
-                        elif progress < 50:
-                            st.warning("Estoque baixo!")
-                        else:
-                            st.success("Estoque adequado")
 
                     with col2:
+                        if st.button("Deletar", key=f"del_{row['id']}_{variavel_alerta}"):
+                            if st.button("Confirmar exclusão?", key=f"confirm_del_{row['id']}_{variavel_alerta}"):
+                                if delete_produto(row['id']):
+                                    st.success(f"Produto '{row['nome']}' deletado com sucesso!")
+                                    st.rerun()
+                                else:
+                                    st.error("Erro ao deletar produto.")
+                                    
+                                    
                         if st.button("Editar", key=f"edit_{index}"):
                             st.session_state[f"editing_{index}"] = True
 
                     if st.session_state.get(f"editing_{index}", False):
                         with st.form(key=f"edit_form_{index}"):
-                            nome = st.text_input("Nome do Produto", value=row['nome'])
-                            preco_atual = st.number_input("Preço de Venda", min_value=0.01, step=0.01, value=float(row['preco_atual']))
-                            estoque = st.number_input("Estoque", min_value=0, step=1, value=int(row['estoque']))
-                            estoque_minimo = st.number_input("Estoque Mínimo", min_value=0, step=1, value=int(row['estoque_minimo']))
-                            estoque_alerta = st.number_input("Estoque Alerta", min_value=0, step=1, value=int(row['estoque_alerta']))
-                            estoque_maximo = st.number_input("Estoque Máximo", min_value=0, step=1, value=int(row['estoque_maximo']))
-                            preco_aquisicao = st.number_input("Preço de Aquisição", min_value=0.0, step=0.01, value=float(row['preco_aquisicao']))
-                            categoria = st.text_input("Categoria", value=row['categoria'])
-                            local = st.text_input("Local", value=row['local'])
+                            key_prefix = f"editing_{index}_{variavel_alerta}"
+                            nome_edit = st.text_input("Nome do Produto", value=row['nome'], key=f"{key_prefix}_nome")
+                            preco_atual_edit = st.number_input("Preço de Venda", min_value=0.01, step=0.01, value=float(row['preco_atual']), key=f"{key_prefix}_preco_atual")
+                            estoque_edit = st.number_input("Estoque", min_value=0, step=1, value=int(row['estoque']), key=f"{key_prefix}_estoque")
+                            estoque_minimo_edit = st.number_input("Estoque Mínimo", min_value=0, step=1, value=int(row['estoque_minimo']), key=f"{key_prefix}_estoque_minimo")
+                            estoque_alerta_edit = st.number_input("Estoque Alerta", min_value=0, step=1, value=int(row['estoque_alerta']), key=f"{key_prefix}_estoque_alerta")
+                            estoque_maximo_edit = st.number_input("Estoque Máximo", min_value=0, step=1, value=int(row['estoque_maximo']), key=f"{key_prefix}_estoque_maximo")
+                            preco_aquisicao_edit = st.number_input("Preço de Aquisição", min_value=0.0, step=0.01, value=float(row['preco_aquisicao']), key=f"{key_prefix}_preco_aquisicao")
+                            categoria_edit = st.text_input("Categoria", value=row['categoria'], key=f"{key_prefix}_categoria")
+                            local_edit = st.text_input("Local", value=row['local'], key=f"{key_prefix}_local")
 
                             col1, col2 = st.columns(2)
                             with col1:
                                 if st.form_submit_button("Atualizar"):
                                     update_produto(
-                                        nome=nome,
-                                        preco_atual=preco_atual,
-                                        estoque=estoque,
-                                        estoque_minimo=estoque_minimo,
-                                        estoque_alerta=estoque_alerta,
-                                        estoque_maximo=estoque_maximo,
-                                        preco_aquisicao=preco_aquisicao,
-                                        categoria=categoria,
-                                        local=local
+                                        produto_id=row['id'],
+                                        nome=nome_edit,
+                                        preco_atual=preco_atual_edit,
+                                        estoque=estoque_edit,
+                                        estoque_minimo=estoque_minimo_edit,
+                                        estoque_alerta=estoque_alerta_edit,
+                                        estoque_maximo=estoque_maximo_edit,
+                                        preco_aquisicao=preco_aquisicao_edit,
+                                        categoria=categoria_edit,
+                                        local=local_edit
                                     )
                                     st.success("Produto atualizado com sucesso!")
                                     st.session_state[f"editing_{index}"] = False
