@@ -72,7 +72,7 @@ def not_authenticated():
                     st.session_state['authenticated'] = True
                     st.session_state['username'] = new_username
                     st.session_state['username_id'] = get_user_by_username(username=new_username)
-                    st.write('Conta criada com sucesso')
+                    st.success('Conta criada com sucesso')
                     time.sleep(3)
                     st.rerun()
                 except Exception as e:

@@ -81,6 +81,7 @@ def produto(row, informacoes: bool = False, variavel_alerta : int = 0):
 
                         
 def listagem_produtos(df):
+    st.header("Listagem Simples de Produtos", divider='blue')
     try:
         categorias = df['categoria'].unique().tolist()
         tabs = st.tabs(categorias)
@@ -92,7 +93,8 @@ def listagem_produtos(df):
                 for index, row in produtos_categoria.iterrows():
                     produto(row, informacoes=False, variavel_alerta=1)
     except Exception as e:
-        st.error(f'Erro ao listar produtos: {str(e)}')
+        st.warning(f'Crie os produtos !')
+        print(e)
 
 def pesquisa_produtos(df):
     st.header("Pesquisar Produtos")
@@ -108,9 +110,27 @@ def pesquisa_produtos(df):
             st.success(f"{len(produtos_filtrados)} produto(s) encontrado(s).")
             for index, row in produtos_filtrados.iterrows():
                 produto(row, False, 2)
+                
+                
+def pesquisa_produtos_avançado(df):
+    st.header("Pesquisa Avançada de Produtos")
+    search_term_1 = st.text_input("Digite o nome do produto, categoria ou qualquer outra informação", key="busca_avancada")
+    if search_term_1:
+        produtos_filtrados = df[
+            df.astype(str).apply(lambda x: x.str.contains(search_term_1, case=False)).any(axis=1)
+        ]
+                    
+        if produtos_filtrados.empty:
+            st.warning("Nenhum produto encontrado com esse termo de pesquisa.")
+        else:
+            st.success(f"{len(produtos_filtrados)} produto(s) encontrado(s).")
+            for index, row in produtos_filtrados.iterrows():
+                produto(row, True, 6)    
+
 
 
 def adiciona_produtos():
+    st.header("Adicionar Produtos", divider='red')
     with st.form("novo_produto"):
         nome = st.text_input("Nome do Produto")
         preco_atual = st.number_input("Preço de Venda", min_value=0.01, step=0.01)
@@ -134,7 +154,7 @@ def adiciona_produtos():
                 
 def listagem_produtos_detalhada(df):
     try:
-        st.write("Esta é uma listagem sem resumo ")
+        st.header("Listagem Avançada de Produtos", divider='blue')
         categorias = df['categoria'].unique().tolist()
         tabs = st.tabs(categorias)
         carrinhos_ativos = st.session_state.get('carrinhos_ativos', [])
@@ -145,7 +165,8 @@ def listagem_produtos_detalhada(df):
                 for index, row in produtos_categoria.iterrows():
                     produto(row, True, 4)
     except Exception as e:
-        st.error(f'Erro ao listar produtos: {str(e)}')
+        st.warning(f'Crie os produtos !')
+        print(e)
         
         
 def pesquisa_e_edicao_produtos(df, variavel_alerta : int = 9):

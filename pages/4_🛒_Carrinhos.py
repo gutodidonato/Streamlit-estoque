@@ -6,11 +6,19 @@ from tools.auth import not_authenticated
 def carrinho_page():
     st.title("Gerenciamento de Carrinhos")
 
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        st.write("Página de Clientes: ")
+    with c2:
+        st.page_link("pages/3_👦_Clientes.py", label=":blue[Página de Clientes]", icon="👦")
+    with c3: 
+        st.write("| Página de Produtos: ")
+    with c4:
+        st.page_link("pages/2_📈_Produtos_Estoque.py", label=":blue[Página de Produtos]", icon="📈")
+    
+    
     if 'carrinhos_ativos' not in st.session_state or not st.session_state.carrinhos_ativos:
         st.info("Nenhum carrinho ativo. Inicie um carrinho na página de clientes.")
-        if st.button("Voltar para Clientes", key="voltar_clientes"):
-            st.session_state.page = "clientes"
-            st.rerun()
         return
 
 
@@ -20,9 +28,6 @@ def carrinho_page():
     cliente_id = st.session_state.carrinhos_ativos[cliente_names.index(selected_cliente)]
     exibir_carrinho(cliente_id)
 
-    if st.sidebar.button("Voltar para Clientes", key="sidebar_voltar_clientes"):
-        st.session_state.page = "clientes"
-        st.rerun()
 
 def exibir_carrinho(cliente_id):
     cliente = get_cliente(cliente_id)

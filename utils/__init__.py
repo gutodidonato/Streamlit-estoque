@@ -1,1 +1,1 @@
-from .venda_utils import load_product_data, listagem_produtos, pesquisa_produtos, adiciona_produtos, listagem_produtos_detalhada, pesquisa_e_edicao_produtos
+from .venda_utils import load_product_data, listagem_produtos, pesquisa_produtos, adiciona_produtos, listagem_produtos_detalhada, pesquisa_e_edicao_produtos, pesquisa_produtos_avançado

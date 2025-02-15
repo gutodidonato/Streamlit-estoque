@@ -38,7 +38,7 @@ def listagem_clientes():
 
     for cliente in filtered_clientes:
         with st.expander(f"Cliente: {cliente.nome} -  Email: {cliente.email or 'Sem email'}"):
-            col1, col2, col3 = st.columns([2, 1, 1])
+            col1, col2 = st.columns([2, 1])
             with col1:
                 st.write(f"**Email:** {cliente.email or 'Não informado'}")
                 st.write(f"**Endereço:** {cliente.endereco or 'Não informado'}")
@@ -53,18 +53,19 @@ def listagem_clientes():
                         if cliente.id not in st.session_state.carrinhos_ativos:
                             st.session_state.carrinhos_ativos.append(cliente.id)
                             st.success(f"Carrinho iniciado para {cliente.nome}")
-            with col3:
-                col3_1, col3_2 = st.columns(2)
-                with col3_1:
-                    if st.button("Editar", key=f"edit_{cliente.id}"):
+
+                if st.button("Editar", key=f"edit_{cliente.id}"):
+                    if st.session_state.get("editing_client") == cliente.id:
+                        st.session_state.editing_client = None  
+                    else:
                         st.session_state.editing_client = cliente.id
-                with col3_2:
-                    if st.button("Deletar", key=f"del_{cliente.id}"):
-                        if delete_cliente(cliente.id):
-                            st.success("Cliente deletado com sucesso!")
-                            st.rerun()
-                        else:
-                            st.error("Erro ao deletar cliente.")
+
+                if st.button("Deletar", key=f"del_{cliente.id}"):
+                    if delete_cliente(cliente.id):
+                        st.success("Cliente deletado com sucesso!")
+                        st.rerun()
+                    else:
+                        st.error("Erro ao deletar cliente.")
 
             if st.session_state.get('editing_client') == cliente.id:
                 st.subheader(f"Editar Cliente: {cliente.nome}")
